@@ -10,6 +10,8 @@ the notes of the version's GitHub Release.
 
 ## [Unreleased]
 
+## [1.0.1] - 2026-10-16
+
 ### Added
 
 - Philips air purifiers and humidifiers on the local network (encrypted CoAP, UDP 5683): one Gladys device per
@@ -26,4 +28,5 @@ the notes of the version's GitHub Release.
 - "Check the purifiers" button in the configuration.
 - Documentation in English, French, German and Spanish.
 
-[Unreleased]: https://github.com/guim31/gladys-philips-air/commits/main
+[Unreleased]: https://github.com/guim31/gladys-philips-air/compare/v1.0.1...HEAD
+[1.0.1]: https://github.com/guim31/gladys-philips-air/releases/tag/v1.0.1

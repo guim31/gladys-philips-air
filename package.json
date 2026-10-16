@@ -1,6 +1,6 @@
 {
   "name": "gladys-philips-air",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "private": true,
   "description": "Gladys Assistant integration for Philips air purifiers and humidifiers, over their local encrypted CoAP protocol.",
   "type": "module",
