@@ -16,8 +16,8 @@ its only runtime dependency. It started from the official JavaScript template.
 ```bash
 npm install
 npm test                                  # node --test, the built-in runner
-node --test test/devices.test.js          # one file
-node --test --test-name-pattern "plug"    # tests whose name matches
+node --test test/hub.test.js              # one file
+node --test --test-name-pattern "boost"   # tests whose name matches
 npm run lint                              # ESLint
 npm run format:check                      # Prettier, as the CI runs it
 npm run format                            # Prettier, fix in place
@@ -32,15 +32,25 @@ pushing.
 
 ```
 index.js                          SDK wiring only: handlers registered before connect()
-src/devices/index.js              registry of the device blueprints + dispatch helpers
-src/devices/<type>.js             one device type per file (buildDevice, onPoll, onSetValue...)
+src/app.js                        registers every SDK handler on the hub (index.js and the tests)
+src/hub.js                        addresses, reading timer, pushes, states, commands, trigger, boost
+src/devices.js                    Gladys device payload, feature names (4 languages), values, commands
+src/philips/coap.js               CoAP codec (RFC 7252), no dependency
+src/philips/endpoint.js           one UDP socket: retries, ACK of CON, observe, Block2
+src/philips/crypto.js             AES-128-CBC + SHA-256 scheme of the protocol
+src/philips/client.js             one session per purifier: sync, status, control
+src/philips/models.js             key generations, model families, readings, command keys
 src/scenes.js                     scene action handlers (manifest `scene_actions`)
 src/widgets.js                    dashboard widget handlers (manifest `widgets`)
+src/texts.js                      texts sent to Gladys outside the widget (4 languages)
 src/config.js                     DEFAULT_CONFIG (mirrors the manifest defaults) + normalization
-src/weather.js                    example driver (Open-Meteo)
+src/store.js, src/problems.js     /data persistence; repeated failures logged once
+scripts/probe.mjs                 read-only probe of a real purifier (identifiers masked)
+tools/fake-philips.mjs            a fake purifier on a real UDP port (development)
 gladys-assistant-integration.json manifest: name, config_schema, actions, image...
-docs/en.md, docs/fr.md            user documentation, re-hosted by Gladys (mandatory)
-test/                             node --test, against the SDK's fake Gladys (integration-sdk/testing)
+docs/{en,fr,de,es}.md             user documentation, re-hosted by Gladys, same sections
+test/                             node --test, against the SDK's fake Gladys and test/helpers/fakePhilips.js
+test/fixtures/philips/            statuses: real (py-air-control, aioairctrl) or reconstructed (said in `source`)
 .github/scripts/release.mjs       release helpers (manifest bump, changelog), tested in test/
 ```
 
@@ -70,8 +80,9 @@ test/                             node --test, against the SDK's fake Gladys (in
   `type: "provider"`: 5.1.0). `test/manifest.test.js` ties the manifest to the
   code (defaults, action, scene and widget handlers): change both sides
   together.
-- **User-facing text** is bilingual (English and French): action messages,
-  manifest texts, and `docs/en.md` / `docs/fr.md`, kept in sync.
+- **User-facing text** exists in English, French, German and Spanish: action
+  messages, manifest texts, feature names, and `docs/{en,fr,de,es}.md`, kept in
+  sync (`test/i18n.test.js`).
 - **Style.** Prettier formats, ESLint catches mistakes. Comments explain why,
   in English. Tests never touch the network.
 
@@ -233,3 +244,61 @@ long, et sur un « Sie »/« Ihr… » de politesse en allemand. Le store exige 
 - Docs `en`, `fr`, `de`, `es` avec les mêmes sections.
 - Chauffe, ouverture, sécurité : ne rien rendre pilotable « comme un thermostat » ou par un assistant
   vocal quand une erreur serait dangereuse (leçon d'OctoPrint).
+
+## Philips Air (gladys-philips-air)
+
+**Protocole** (références : aioairctrl et py-air-control, MIT ; l'intégration HACS
+`kongo09/philips-airpurifier-coap`)
+
+- CoAP sur UDP 5683, requêtes non confirmables (NON) comme aioairctrl. `POST /sys/dev/sync` (8 chiffres hexa
+  aléatoires) renvoie en clair le compteur de session ; `GET /sys/dev/status` (Observe 0) renvoie
+  `{"state":{"reported":{...}}}` chiffré ; `POST /sys/dev/control` reçoit `{"state":{"desired":{"CommandType":
+"app","DeviceId":"","EnduserId":"",...}}}` chiffré et répond en clair `{"status":"success"|"failed"}`.
+- Chiffrement : compteur incrémenté AVANT chaque message, clé et IV = les deux moitiés de MD5("JiangPan" +
+  compteur) en hexa MAJUSCULE pris comme texte ASCII, puis SHA-256(compteur + chiffré). Vérifié contre deux
+  captures réelles d'aioairctrl (déchiffrées et rechiffrées à l'octet près, hors dépôt : elles contiennent
+  de vrais DeviceId) ; le test commité utilise des vecteurs produits par l'implémentation Python d'aioairctrl.
+- Trois générations de clés : classique (`pwr` "1"/"0", `mode` lettre, `om` vitesse "1"/"s"/"t", `cl`
+  booléen OU texte "false"), `D03-xx` (AC1715, AC0850 « AWS_Philips_AIR » : `D03-02` "ON"), `D03xxx`
+  (AC0850 Combo, AC2220…, HU : `D03102` 1/0, mode `D0310C` entier, température `D03224` en dixièmes).
+- La lettre `M` (manuel) est partagée : sur AC2889 `M`+`s` = sommeil, `M`+`t` = turbo, `M`+chiffre = manuel.
+  Un mode n'est donc lu « manuel » qu'avec une vitesse numérique et la lettre des vitesses (test dans
+  `models.test.js`).
+- `fltsts2: 65535` ou `fltt2: "none"` = pas de filtre à charbon. `err` : bit 8 (0x100) = plus d'eau, 32768 =
+  réservoir ouvert, 193 / 49155 = pré-filtre à nettoyer (py-air-control).
+- Le firmware est réputé instable (cesse de répondre en local au bout d'un moment) : chaque lecture rafraîchit
+  la MÊME observation (même jeton), une lecture sans réponse oublie la session (re-sync à la suivante), une
+  commande refusée re-synchronise une fois.
+
+**Choix de conception**
+
+- La HACS n'a **aucune licence au niveau du dépôt** (seul le code des icônes est sous MIT) : ses tables de
+  modèles ont été lues, pas recopiées. `src/philips/models.js` réécrit des familles à partir des faits du
+  protocole. Un modèle absent garde capteurs, marche/arrêt et filtres, sans liste de modes.
+- Exclus volontairement : chauffages CX et ventilateurs AMF (piloter une chauffe à l'aveugle), AC1214 et
+  AC3737 (séquences particulières), AC3836, AC4550/4558.
+- Identité : `DeviceId` (32 hexa) du statut ; l'adresse IP n'est qu'un paramètre (changement de DHCP sans
+  nouvel appareil). Pas de découverte : les purificateurs ne s'annoncent pas d'une façon visible depuis le pont.
+- Indice d'allergènes (1-12) en `counter-sensor/integer` : `airquality-sensor` le colorerait sur l'échelle AQI
+  0-500 (toujours vert), `risk` ne connaît que 0-3. Le widget l'affiche avec les bandes Philips.
+- Mode, humidité cible et éclairage de l'écran en `text/select` (listes exactes du modèle) ; vitesse en
+  `fan/speed`. Réservoir en `level-sensor/liquid-state` (0 bas, 1 normal).
+- Déclencheur `maintenance_needed` : une fois par élément, réarmé quand c'est fait, mémorisé dans `/data` ;
+  pas d'événement tant que l'appareil n'est pas ajouté à Gladys. Pré-filtre seulement à 0 h (cycle court).
+- Action `boost` : turbo N minutes puis retour à l'état d'avant, sauf si quelqu'un a changé le purificateur ;
+  persisté dans `/data`, terminé à la réponse suivante si l'appareil était absent.
+
+**Pièges découverts (à reporter dans les autres dépôts)**
+
+- SDK : les types génériques des capteurs sont sous `DEVICE_FEATURE_TYPES.SENSOR` (`DECIMAL`, `INTEGER`,
+  `BINARY`), pas sous `PM25_SENSOR` ni `HUMIDITY_SENSOR` (undefined).
+- Faux Gladys : `fake.transports` est une liste à plat de `{ device_external_id, transport }` ; l'ack d'une
+  action vaut `{ data: { message } }`, celui d'une action de scène `{ data: { outputs } }`.
+- **Tests de journaux** : remplacer `process.stdout.write` pendant une capture avale aussi la sortie du
+  rapporteur de `node --test` du test précédent : des tests disparaissent du compte SANS échouer. Ne capturer
+  que les lignes du logger (`/^\[\d{4}-/`) et relayer le reste au vrai `write` (`test/logs.test.js`).
+- Front 5.2.1 : une ligne de tableau de bord affiche le nom de l'APPAREIL quand le **type** (pas le couple)
+  est unique sur l'appareil (`matchFeature` ne compare que `type`) : deux `text/select` gardent leur nom.
+- Le cœur 5.2.1 accepte un `step` par fonctionnalité (curseurs).
+- Le garde du « Sie » allemand attrape aussi « sie » pronom en début de phrase (« Sie wählt… ») :
+  reformuler.

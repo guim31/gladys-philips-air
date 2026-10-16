@@ -1,0 +1,31 @@
+{
+  "source": "Reconstructed for tests from the key lists of aioairctrl, py-air-control and the Home Assistant community integration: not a capture.",
+  "status": {
+    "name": "Kitchen",
+    "type": "AC4236",
+    "modelid": "AC4236/10",
+    "swversion": "Ms4106",
+    "om": "as",
+    "pwr": "1",
+    "cl": false,
+    "aqil": 100,
+    "uil": "1",
+    "mode": "AS",
+    "pm25": 3,
+    "iaql": 1,
+    "aqit": 4,
+    "ddp": "1",
+    "rddp": "1",
+    "err": 0,
+    "fltt1": "A3",
+    "fltt2": "C7",
+    "fltsts0": 200,
+    "fltsts1": 40,
+    "fltsts2": 3500,
+    "WifiVersion": "AWS_Philips_AIR@64.2",
+    "ProductId": "ffffffffffffffffffffffffffff0001",
+    "DeviceId": "00000000000000000000000000004236",
+    "StatusType": "status",
+    "ConnectType": "Online"
+  }
+}

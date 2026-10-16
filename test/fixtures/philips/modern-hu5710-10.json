@@ -1,0 +1,23 @@
+{
+  "source": "Reconstructed for tests from the key lists of aioairctrl, py-air-control and the Home Assistant community integration: not a capture.",
+  "status": {
+    "D01S03": "Living",
+    "D01S05": "HU5710/10",
+    "D01S12": "1.0.4",
+    "WifiVersion": "AWS_Philips_AIR_Combo@1.1",
+    "ProductId": "ffffffffffffffffffffffffffff0001",
+    "DeviceId": "00000000000000000000000000005710",
+    "StatusType": "status",
+    "ConnectType": "Online",
+    "D03102": 1,
+    "D0310C": 17,
+    "D03103": 0,
+    "D03105": 115,
+    "D03125": 48,
+    "D03128": 55,
+    "D03224": 215,
+    "D03240": 256,
+    "D0540E": 1800,
+    "D05408": 2160
+  }
+}
