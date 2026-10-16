@@ -30,6 +30,19 @@ Gladys before reporting a problem.
 
 In scope: the code of this repository and the Docker image it publishes.
 
+What the integration handles:
+
+- **Network**: it talks to the purifiers at the IP addresses entered in the configuration, over UDP port 5683
+  (CoAP), on the local network only. It opens no listening port reachable from outside the container and
+  calls no cloud service.
+- **Encryption**: the protocol of the purifiers encrypts its messages with a key derived from a constant
+  shared by every device ("JiangPan"): it hides nothing from someone on the same network. Anyone on the LAN can
+  read and drive these purifiers, with or without Gladys; this is a property of the devices.
+- **Stored in `/data`** (`philips-air-state.json`): for each purifier, its address, its model, its name in the
+  Philips app, the keys its status reports, the maintenance alerts already fired and the running boosts.
+  No password, token or session key: there is none to store, and the session counters stay in memory.
+- **Logs**: no session key, no decrypted status, no device identifier.
+
 Out of scope: Gladys Assistant itself (see its
-[security policy](https://github.com/GladysAssistant/Gladys/security/policy)),
-and the third-party services and devices the integration talks to.
+[security policy](https://github.com/GladysAssistant/Gladys/security/policy)), the Philips firmware and the
+Philips (Versuni) cloud services.

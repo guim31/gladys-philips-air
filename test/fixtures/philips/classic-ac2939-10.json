@@ -1,0 +1,30 @@
+{
+  "source": "Reconstructed for tests from the key lists of aioairctrl, py-air-control and the Home Assistant community integration: not a capture.",
+  "status": {
+    "name": "Study",
+    "type": "AC2939",
+    "modelid": "AC2939/10",
+    "swversion": "Ms4106",
+    "om": "1",
+    "pwr": "1",
+    "cl": false,
+    "aqil": 100,
+    "uil": "1",
+    "mode": "GT",
+    "pm25": 4,
+    "iaql": 1,
+    "ddp": "1",
+    "rddp": "1",
+    "err": 0,
+    "fltt1": "A3",
+    "fltt2": "none",
+    "fltsts0": 250,
+    "fltsts1": 4000,
+    "fltsts2": 65535,
+    "WifiVersion": "AWS_Philips_AIR@64.2",
+    "ProductId": "ffffffffffffffffffffffffffff0001",
+    "DeviceId": "00000000000000000000000000002939",
+    "StatusType": "status",
+    "ConnectType": "Online"
+  }
+}

@@ -1,33 +1,40 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { normalizeConfig, DEFAULT_CONFIG } from '../src/config.js';
+import { DEFAULT_CONFIG, normalizeConfig, parseHosts } from '../src/config.js';
 
-test('normalizeConfig returns the defaults when called with no argument', () => {
-  assert.deepEqual(normalizeConfig(), DEFAULT_CONFIG);
+test('config: the defaults', () => {
+  assert.deepEqual(normalizeConfig(), {
+    hosts: [],
+    invalidHosts: [],
+    pollSeconds: 30,
+    filterWarningHours: 0,
+    language: 'fr',
+  });
+  assert.equal(DEFAULT_CONFIG.language, 'fr');
 });
 
-test('normalizeConfig keeps user values over the defaults', () => {
-  const config = normalizeConfig({ latitude: 45.5, longitude: -73.6, unit: 'fahrenheit' });
-  assert.equal(config.latitude, 45.5);
-  assert.equal(config.longitude, -73.6);
-  assert.equal(config.unit, 'fahrenheit');
+test('config: addresses separated by commas, spaces or new lines, an optional port', () => {
+  const { hosts, invalid } = parseHosts(
+    '192.168.1.40, 192.168.001.41;\n192.168.1.40 10.0.0.5:5684 300.1.1.1 box.lan',
+  );
+  assert.deepEqual(hosts, [
+    { host: '192.168.1.40', port: 5683 },
+    { host: '192.168.1.41', port: 5683 },
+    { host: '10.0.0.5', port: 5684 },
+  ]);
+  assert.deepEqual(invalid, ['300.1.1.1', 'box.lan']);
+  assert.deepEqual(parseHosts('10.0.0.5:0').invalid, ['10.0.0.5:0']);
 });
 
-test('normalizeConfig coerces numeric strings coming from a form', () => {
-  const config = normalizeConfig({ latitude: '48.8', longitude: '2.3', poll_frequency: '600' });
-  assert.equal(config.latitude, 48.8);
-  assert.equal(config.longitude, 2.3);
-  assert.equal(config.poll_frequency, 600);
-  assert.equal(typeof config.poll_frequency, 'number');
-});
-
-test('normalizeConfig falls back to the default for a missing numeric field', () => {
-  const config = normalizeConfig({ unit: 'celsius' });
-  assert.equal(config.poll_frequency, DEFAULT_CONFIG.poll_frequency);
-});
-
-test('GLADYS_PREFER_LOCAL defaults to true and only an explicit false disables it', () => {
-  assert.equal(normalizeConfig().GLADYS_PREFER_LOCAL, true);
-  assert.equal(normalizeConfig({ GLADYS_PREFER_LOCAL: true }).GLADYS_PREFER_LOCAL, true);
-  assert.equal(normalizeConfig({ GLADYS_PREFER_LOCAL: false }).GLADYS_PREFER_LOCAL, false);
+test('config: values outside the lists fall back to the defaults', () => {
+  const config = normalizeConfig({
+    poll_interval: '7',
+    filter_warning_hours: '72',
+    language: 'it',
+    hosts: 42,
+  });
+  assert.equal(config.pollSeconds, 30);
+  assert.equal(config.filterWarningHours, 72);
+  assert.equal(config.language, 'fr');
+  assert.deepEqual(config.hosts, []);
 });

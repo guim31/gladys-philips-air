@@ -1,177 +1,522 @@
 {
   "manifest_version": 1,
   "type": "device",
-  "name": "Demo Devices Template",
+  "name": "Philips Air",
   "description": {
-    "en": "Starter template showing sensors, a switch, a dimmable light and a smart plug.",
-    "fr": "Template de démarrage : capteurs, interrupteur, lampe variable et prise connectée."
+    "en": "Philips air purifiers and humidifiers on the local network: air quality, modes, filters.",
+    "fr": "Purificateurs et humidificateurs Philips en local : qualité de l’air, modes, filtres.",
+    "de": "Philips-Luftreiniger und Luftbefeuchter im lokalen Netz: Luftqualität, Modi, Filter.",
+    "es": "Purificadores y humidificadores Philips en la red local: calidad del aire, modos, filtros."
   },
   "version": "1.0.0",
-  "docker_image": "ghcr.io/gladysassistant/integration-template-js:1.0.0",
+  "docker_image": "ghcr.io/guim31/gladys-philips-air:1.0.0",
   "gladys_version": ">=5.1.0",
-  "cover_image": "https://raw.githubusercontent.com/GladysAssistant/integration-template-js/master/cover.png",
-  "categories": ["lighting", "security", "environment"],
-  "transports": ["local", "cloud"],
+  "cover_image": "https://raw.githubusercontent.com/guim31/gladys-philips-air/main/cover.png",
+  "categories": ["environment", "appliances"],
+  "transports": ["local"],
   "config_schema": [
     {
       "key": "intro",
       "type": "section",
-      "label": { "en": "Getting started", "fr": "Pour commencer" },
+      "label": {
+        "en": "Connecting your purifiers",
+        "fr": "Connecter vos purificateurs",
+        "de": "Luftreiniger verbinden",
+        "es": "Conectar sus purificadores"
+      },
       "description": {
-        "en": "The demo weather station reads real data from the free Open-Meteo API: pick the coordinates to observe. No account, no API key.",
-        "fr": "La station météo de démonstration lit de vraies données via l'API gratuite Open-Meteo : choisissez les coordonnées à observer. Pas de compte, pas de clé d'API."
+        "en": "Gladys talks to Philips purifiers on your local network, without the Philips cloud. Set up the purifier in the Philips Air+ app first, then enter its IP address below (a fixed address in your router is best). Not affiliated with Philips or Versuni.",
+        "fr": "Gladys dialogue avec les purificateurs Philips sur votre réseau local, sans le cloud Philips. Installez d'abord le purificateur dans l'application Philips Air+, puis saisissez son adresse IP ci-dessous (une adresse fixe dans votre box est préférable). Sans lien avec Philips ni Versuni.",
+        "de": "Gladys spricht mit den Philips-Luftreinigern in deinem lokalen Netz, ohne die Philips-Cloud. Richte den Luftreiniger zuerst in der App Philips Air+ ein und gib dann unten seine IP-Adresse ein (am besten eine feste Adresse im Router). Keine Verbindung zu Philips oder Versuni.",
+        "es": "Gladys se comunica con los purificadores Philips en su red local, sin la nube de Philips. Configure primero el purificador en la aplicación Philips Air+ y después introduzca su dirección IP abajo (mejor una dirección fija en su router). Sin relación con Philips ni Versuni."
       },
       "links": [
         {
-          "url": "https://open-meteo.com/en/docs",
-          "label": { "en": "Open-Meteo documentation", "fr": "Documentation Open-Meteo" }
+          "url": "https://github.com/guim31/gladys-philips-air/blob/main/docs/en.md",
+          "label": {
+            "en": "Setup guide",
+            "fr": "Guide d'installation",
+            "de": "Einrichtungsanleitung",
+            "es": "Guía de instalación"
+          }
         }
       ]
     },
     {
-      "key": "latitude",
-      "type": "number",
-      "label": { "en": "Latitude", "fr": "Latitude" },
-      "description": {
-        "en": "Latitude used for the demo weather sensor.",
-        "fr": "Latitude utilisée par le capteur météo de démonstration."
+      "key": "hosts",
+      "type": "string",
+      "label": {
+        "en": "IP addresses of the purifiers",
+        "fr": "Adresses IP des purificateurs",
+        "de": "IP-Adressen der Luftreiniger",
+        "es": "Direcciones IP de los purificadores"
       },
-      "placeholder": { "en": "e.g. 48.8566", "fr": "ex. 48.8566" },
-      "required": true,
-      "default": 48.8566,
-      "min": -90,
-      "max": 90
-    },
-    {
-      "key": "longitude",
-      "type": "number",
-      "label": { "en": "Longitude", "fr": "Longitude" },
       "description": {
-        "en": "Longitude used for the demo weather sensor.",
-        "fr": "Longitude utilisée par le capteur météo de démonstration."
+        "en": "Separated by commas. Your router lists them (the device is often named \"MXCHIP\").",
+        "fr": "Séparées par des virgules. Votre box les affiche (l’appareil se nomme souvent « MXCHIP »).",
+        "de": "Durch Kommas getrennt. Dein Router zeigt sie an (das Gerät heißt oft „MXCHIP“).",
+        "es": "Separadas por comas. Su router las muestra (el aparato suele llamarse «MXCHIP»)."
       },
-      "placeholder": { "en": "e.g. 2.3522", "fr": "ex. 2.3522" },
-      "required": true,
-      "default": 2.3522,
-      "min": -180,
-      "max": 180
-    },
-    {
-      "key": "unit",
-      "type": "select",
-      "label": { "en": "Temperature unit", "fr": "Unité de température" },
+      "placeholder": {
+        "en": "e.g. 192.168.1.40, 192.168.1.41",
+        "fr": "ex. 192.168.1.40, 192.168.1.41",
+        "de": "z. B. 192.168.1.40, 192.168.1.41",
+        "es": "p. ej. 192.168.1.40, 192.168.1.41"
+      },
       "required": false,
-      "default": "celsius",
+      "default": ""
+    },
+    {
+      "key": "poll_interval",
+      "type": "select",
+      "label": {
+        "en": "Refresh interval",
+        "fr": "Intervalle de rafraîchissement",
+        "de": "Aktualisierungsintervall",
+        "es": "Intervalo de actualización"
+      },
+      "description": {
+        "en": "How often each purifier is read. Changes are usually pushed at once; this read is the safety net.",
+        "fr": "Fréquence de lecture de chaque purificateur. Les changements arrivent en général tout de suite ; cette lecture est le filet de sécurité.",
+        "de": "Wie oft jeder Luftreiniger gelesen wird. Änderungen kommen meist sofort an; diese Abfrage ist das Sicherheitsnetz.",
+        "es": "Frecuencia de lectura de cada purificador. Los cambios suelen llegar al instante; esta lectura es la red de seguridad."
+      },
+      "required": false,
+      "default": "30",
       "options": [
-        { "value": "celsius", "label": { "en": "Celsius", "fr": "Celsius" } },
-        { "value": "fahrenheit", "label": { "en": "Fahrenheit", "fr": "Fahrenheit" } }
+        {
+          "value": "10",
+          "label": {
+            "en": "10 seconds",
+            "fr": "10 secondes",
+            "de": "10 Sekunden",
+            "es": "10 segundos"
+          }
+        },
+        {
+          "value": "15",
+          "label": {
+            "en": "15 seconds",
+            "fr": "15 secondes",
+            "de": "15 Sekunden",
+            "es": "15 segundos"
+          }
+        },
+        {
+          "value": "30",
+          "label": {
+            "en": "30 seconds",
+            "fr": "30 secondes",
+            "de": "30 Sekunden",
+            "es": "30 segundos"
+          }
+        },
+        {
+          "value": "60",
+          "label": {
+            "en": "60 seconds",
+            "fr": "60 secondes",
+            "de": "60 Sekunden",
+            "es": "60 segundos"
+          }
+        },
+        {
+          "value": "120",
+          "label": {
+            "en": "120 seconds",
+            "fr": "120 secondes",
+            "de": "120 Sekunden",
+            "es": "120 segundos"
+          }
+        }
       ]
     },
     {
-      "key": "poll_frequency",
-      "type": "number",
-      "label": { "en": "Refresh interval (s)", "fr": "Intervalle de rafraîchissement (s)" },
+      "key": "filter_warning_hours",
+      "type": "select",
+      "label": {
+        "en": "Filter replacement warning",
+        "fr": "Alerte de remplacement des filtres",
+        "de": "Warnung zum Filterwechsel",
+        "es": "Aviso de cambio de filtros"
+      },
       "description": {
-        "en": "How often sensors are polled, in seconds (one minute minimum).",
-        "fr": "Fréquence d'interrogation des capteurs, en secondes (une minute minimum)."
+        "en": "When the \"Maintenance needed\" trigger fires for a filter to replace (HEPA, carbon, wick). The pre-filter is announced when the purifier asks.",
+        "fr": "Quand le déclencheur « Entretien nécessaire » part pour un filtre à remplacer (HEPA, charbon, mèche). Le pré-filtre est signalé quand le purificateur le demande.",
+        "de": "Wann der Auslöser „Wartung nötig“ für einen zu wechselnden Filter auslöst (HEPA, Aktivkohle, Docht). Der Vorfilter wird gemeldet, wenn der Luftreiniger es verlangt.",
+        "es": "Cuándo se activa el disparador «Mantenimiento necesario» para un filtro por cambiar (HEPA, carbón, mecha). El prefiltro se avisa cuando el purificador lo pide."
       },
       "required": false,
-      "default": 300,
-      "min": 60,
-      "max": 3600
+      "default": "0",
+      "options": [
+        {
+          "value": "0",
+          "label": {
+            "en": "When the purifier asks",
+            "fr": "Quand le purificateur le demande",
+            "de": "Wenn der Luftreiniger es verlangt",
+            "es": "Cuando el purificador lo pide"
+          }
+        },
+        {
+          "value": "24",
+          "label": {
+            "en": "1 day before",
+            "fr": "1 jour avant",
+            "de": "1 Tag vorher",
+            "es": "1 día antes"
+          }
+        },
+        {
+          "value": "72",
+          "label": {
+            "en": "3 days before",
+            "fr": "3 jours avant",
+            "de": "3 Tage vorher",
+            "es": "3 días antes"
+          }
+        },
+        {
+          "value": "168",
+          "label": {
+            "en": "1 week before",
+            "fr": "1 semaine avant",
+            "de": "1 Woche vorher",
+            "es": "1 semana antes"
+          }
+        }
+      ]
+    },
+    {
+      "key": "language",
+      "type": "select",
+      "label": {
+        "en": "Language of the device names",
+        "fr": "Langue des noms des appareils",
+        "de": "Sprache der Gerätenamen",
+        "es": "Idioma de los nombres"
+      },
+      "description": {
+        "en": "Names given to new devices, their features, the mode list and the trigger messages.",
+        "fr": "Noms donnés aux nouveaux appareils, à leurs fonctionnalités, à la liste des modes et aux messages du déclencheur.",
+        "de": "Namen für neue Geräte, ihre Funktionen, die Modusliste und die Meldungen des Auslösers.",
+        "es": "Nombres de los nuevos dispositivos, sus funciones, la lista de modos y los mensajes del disparador."
+      },
+      "required": false,
+      "default": "fr",
+      "options": [
+        {
+          "value": "en",
+          "label": {
+            "en": "English",
+            "fr": "Anglais",
+            "de": "Englisch",
+            "es": "Inglés"
+          }
+        },
+        {
+          "value": "fr",
+          "label": {
+            "en": "French",
+            "fr": "Français",
+            "de": "Französisch",
+            "es": "Francés"
+          }
+        },
+        {
+          "value": "de",
+          "label": {
+            "en": "German",
+            "fr": "Allemand",
+            "de": "Deutsch",
+            "es": "Alemán"
+          }
+        },
+        {
+          "value": "es",
+          "label": {
+            "en": "Spanish",
+            "fr": "Espagnol",
+            "de": "Spanisch",
+            "es": "Español"
+          }
+        }
+      ]
     }
   ],
   "actions": [
     {
-      "key": "test_weather",
-      "label": { "en": "Test the weather provider", "fr": "Tester le fournisseur météo" },
-      "timeout_seconds": 30
-    },
-    {
-      "key": "identify",
-      "label": { "en": "Identify a device", "fr": "Identifier un appareil" },
-      "fields": [
-        {
-          "key": "device",
-          "type": "select",
-          "source": "devices",
-          "label": { "en": "Device", "fr": "Appareil" },
-          "required": true
-        }
-      ]
+      "key": "check",
+      "label": {
+        "en": "Check the purifiers",
+        "fr": "Vérifier les purificateurs",
+        "de": "Luftreiniger prüfen",
+        "es": "Comprobar los purificadores"
+      },
+      "description": {
+        "en": "Reads every address now and reports which purifiers answer.",
+        "fr": "Lit chaque adresse maintenant et indique quels purificateurs répondent.",
+        "de": "Liest jede Adresse jetzt und zeigt, welche Luftreiniger antworten.",
+        "es": "Lee cada dirección ahora e indica qué purificadores responden."
+      },
+      "timeout_seconds": 60
     }
   ],
   "scene_triggers": [
     {
-      "key": "motion_detected",
-      "label": { "en": "Motion detected", "fr": "Mouvement détecté" },
+      "key": "maintenance_needed",
+      "label": {
+        "en": "Purifier maintenance needed",
+        "fr": "Entretien du purificateur nécessaire",
+        "de": "Wartung des Luftreinigers nötig",
+        "es": "Mantenimiento del purificador necesario"
+      },
       "description": {
-        "en": "A demo motion sensor saw a person or an animal move.",
-        "fr": "Un détecteur de démonstration a vu bouger une personne ou un animal."
+        "en": "A Philips purifier asks for care: a pre-filter to clean, a filter or wick to replace, an empty water tank. Once per item, until it is done.",
+        "fr": "Un purificateur Philips demande un entretien : pré-filtre à nettoyer, filtre ou mèche à remplacer, réservoir d'eau vide. Une fois par élément, jusqu'à ce que ce soit fait.",
+        "de": "Ein Philips-Luftreiniger braucht Pflege: Vorfilter reinigen, Filter oder Docht wechseln, Wassertank leer. Einmal pro Element, bis es erledigt ist.",
+        "es": "Un purificador Philips necesita mantenimiento: prefiltro por limpiar, filtro o mecha por cambiar, depósito de agua vacío. Una vez por elemento, hasta que se haga."
       },
       "fields": [
         {
           "key": "device",
           "type": "select",
           "source": "devices",
-          "label": { "en": "Sensor", "fr": "Détecteur" }
+          "label": {
+            "en": "Purifier",
+            "fr": "Purificateur",
+            "de": "Luftreiniger",
+            "es": "Purificador"
+          }
         },
         {
-          "key": "target",
+          "key": "item",
           "type": "multi_select",
-          "label": { "en": "What moved", "fr": "Ce qui a bougé" },
+          "label": {
+            "en": "What",
+            "fr": "Quoi",
+            "de": "Was",
+            "es": "Qué"
+          },
+          "description": {
+            "en": "Leave empty for all.",
+            "fr": "Laissez vide pour tout.",
+            "de": "Leer lassen für alles.",
+            "es": "Déjelo vacío para todo."
+          },
           "options": [
-            { "value": "person", "label": { "en": "Person", "fr": "Personne" } },
-            { "value": "animal", "label": { "en": "Animal", "fr": "Animal" } }
+            {
+              "value": "pre-filter",
+              "label": {
+                "en": "Pre-filter to clean",
+                "fr": "Pré-filtre à nettoyer",
+                "de": "Vorfilter reinigen",
+                "es": "Prefiltro por limpiar"
+              }
+            },
+            {
+              "value": "hepa-filter",
+              "label": {
+                "en": "HEPA filter to replace",
+                "fr": "Filtre HEPA à remplacer",
+                "de": "HEPA-Filter wechseln",
+                "es": "Filtro HEPA por cambiar"
+              }
+            },
+            {
+              "value": "carbon-filter",
+              "label": {
+                "en": "Carbon filter to replace",
+                "fr": "Filtre à charbon à remplacer",
+                "de": "Aktivkohlefilter wechseln",
+                "es": "Filtro de carbón por cambiar"
+              }
+            },
+            {
+              "value": "wick",
+              "label": {
+                "en": "Wick to replace",
+                "fr": "Mèche à remplacer",
+                "de": "Docht wechseln",
+                "es": "Mecha por cambiar"
+              }
+            },
+            {
+              "value": "water-tank",
+              "label": {
+                "en": "Water tank empty",
+                "fr": "Réservoir d'eau vide",
+                "de": "Wassertank leer",
+                "es": "Depósito de agua vacío"
+              }
+            }
           ]
         }
       ],
       "variables": [
         {
-          "key": "target",
+          "key": "item",
           "type": "string",
-          "label": { "en": "What moved", "fr": "Ce qui a bougé" }
+          "label": {
+            "en": "Item (pre-filter, hepa-filter...)",
+            "fr": "Élément (pre-filter, hepa-filter…)",
+            "de": "Element (pre-filter, hepa-filter…)",
+            "es": "Elemento (pre-filter, hepa-filter…)"
+          }
+        },
+        {
+          "key": "hours_left",
+          "type": "number",
+          "label": {
+            "en": "Hours left",
+            "fr": "Heures restantes",
+            "de": "Reststunden",
+            "es": "Horas restantes"
+          }
+        },
+        {
+          "key": "message",
+          "type": "string",
+          "label": {
+            "en": "Ready-made message",
+            "fr": "Message prêt à envoyer",
+            "de": "Fertige Meldung",
+            "es": "Mensaje listo"
+          }
         }
       ]
     }
   ],
   "scene_actions": [
     {
-      "key": "identify_device",
-      "label": { "en": "Identify a device", "fr": "Identifier un appareil" },
-      "description": {
-        "en": "Make a device signal itself (the demo light blinks).",
-        "fr": "Fait se signaler un appareil (la lampe de démonstration clignote)."
+      "key": "boost",
+      "label": {
+        "en": "Boost the purifier",
+        "fr": "Booster le purificateur",
+        "de": "Luftreiniger boosten",
+        "es": "Impulsar el purificador"
       },
-      "timeout_seconds": 15,
+      "description": {
+        "en": "Runs the purifier in turbo for a while, then puts it back in its previous mode (or off), unless someone changed it meanwhile.",
+        "fr": "Passe le purificateur en turbo un moment, puis le remet dans son mode précédent (ou éteint), sauf si quelqu'un l'a changé entre-temps.",
+        "de": "Lässt den Luftreiniger eine Weile im Turbo laufen und stellt ihn dann auf den vorherigen Modus zurück (oder aus), außer jemand hat ihn inzwischen geändert.",
+        "es": "Pone el purificador en turbo un tiempo y luego lo devuelve a su modo anterior (o apagado), salvo si alguien lo ha cambiado mientras tanto."
+      },
+      "timeout_seconds": 20,
       "fields": [
         {
           "key": "device",
           "type": "select",
           "source": "devices",
-          "label": { "en": "Device", "fr": "Appareil" },
+          "label": {
+            "en": "Purifier",
+            "fr": "Purificateur",
+            "de": "Luftreiniger",
+            "es": "Purificador"
+          },
           "required": true
+        },
+        {
+          "key": "minutes",
+          "type": "number",
+          "label": {
+            "en": "Duration (minutes)",
+            "fr": "Durée (minutes)",
+            "de": "Dauer (Minuten)",
+            "es": "Duración (minutos)"
+          },
+          "required": true,
+          "default": 30,
+          "min": 5,
+          "max": 240
         }
       ],
       "outputs": [
         {
-          "key": "signalled",
-          "type": "boolean",
-          "label": { "en": "Device signalled", "fr": "Appareil signalé" }
+          "key": "until",
+          "type": "string",
+          "label": {
+            "en": "End of the boost (ISO date)",
+            "fr": "Fin du boost (date ISO)",
+            "de": "Ende des Boosts (ISO-Datum)",
+            "es": "Fin del impulso (fecha ISO)"
+          }
         }
       ]
     }
   ],
   "widgets": [
     {
-      "key": "demo_status",
-      "label": { "en": "Demo status", "fr": "État de la démo" },
-      "description": {
-        "en": "Live temperature and plug power, plug connection and observed location.",
-        "fr": "Température et puissance en direct, connexion de la prise, position observée."
+      "key": "purifier",
+      "label": {
+        "en": "Philips purifier",
+        "fr": "Purificateur Philips",
+        "de": "Philips-Luftreiniger",
+        "es": "Purificador Philips"
       },
-      "icon": "activity",
-      "action_timeout_seconds": 15
+      "description": {
+        "en": "Allergen index, filters, boost and one-tap modes.",
+        "fr": "Indice d’allergènes, filtres, boost et modes en un geste.",
+        "de": "Allergenindex, Filter, Boost und Modi mit einem Tipp.",
+        "es": "Índice de alérgenos, filtros, impulso y modos en un toque."
+      },
+      "icon": "wind",
+      "settings": [
+        {
+          "key": "device",
+          "type": "select",
+          "source": "devices",
+          "label": {
+            "en": "Purifier",
+            "fr": "Purificateur",
+            "de": "Luftreiniger",
+            "es": "Purificador"
+          },
+          "required": true
+        },
+        {
+          "key": "boost_minutes",
+          "type": "select",
+          "label": {
+            "en": "Boost button duration",
+            "fr": "Durée du bouton Boost",
+            "de": "Dauer der Boost-Taste",
+            "es": "Duración del botón de impulso"
+          },
+          "required": false,
+          "default": "30",
+          "options": [
+            {
+              "value": "15",
+              "label": {
+                "en": "15 minutes",
+                "fr": "15 minutes",
+                "de": "15 Minuten",
+                "es": "15 minutos"
+              }
+            },
+            {
+              "value": "30",
+              "label": {
+                "en": "30 minutes",
+                "fr": "30 minutes",
+                "de": "30 Minuten",
+                "es": "30 minutos"
+              }
+            },
+            {
+              "value": "60",
+              "label": {
+                "en": "60 minutes",
+                "fr": "60 minutes",
+                "de": "60 Minuten",
+                "es": "60 minutos"
+              }
+            }
+          ]
+        }
+      ],
+      "action_timeout_seconds": 20
     }
   ]
 }

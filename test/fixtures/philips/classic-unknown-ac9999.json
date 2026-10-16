@@ -1,0 +1,24 @@
+{
+  "source": "Reconstructed for tests from the key lists of aioairctrl, py-air-control and the Home Assistant community integration: not a capture. A model missing from the list.",
+  "status": {
+    "name": "Spare",
+    "type": "AC9999",
+    "modelid": "AC9999/10",
+    "swversion": "1.0.0",
+    "om": "1",
+    "pwr": "1",
+    "cl": false,
+    "uil": "1",
+    "mode": "P",
+    "pm25": 9,
+    "iaql": 2,
+    "err": 0,
+    "fltsts0": 100,
+    "fltsts1": 1000,
+    "WifiVersion": "AWS_Philips_AIR@64.2",
+    "ProductId": "ffffffffffffffffffffffffffff0001",
+    "DeviceId": "00000000000000000000000000009999",
+    "StatusType": "status",
+    "ConnectType": "Online"
+  }
+}
